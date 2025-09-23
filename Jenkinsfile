@@ -47,15 +47,15 @@ pipeline {
         stage('Deploy to Staging') {
             when { branch 'stage' }
             steps {
-                sshagent(['ubuntu-key']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no $SSH_USER@$STAGING_HOST "
+                sshagent(credentials: ['ubuntu-key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no $SSH_USER@$STAGING_HOST '
                         docker pull $IMAGE_NAME &&
                         docker stop $APP_NAME || true &&
                         docker rm $APP_NAME || true &&
-                        docker run -d --name $APP_NAME -p 80:80 $IMAGE_NAME
-                    "
-                    '''
+                        docker run -d --name $APP_NAME -p 5000:5000 $IMAGE_NAME
+                    '
+                    """
                 }
             }
         }
