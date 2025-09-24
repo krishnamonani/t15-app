@@ -17,8 +17,25 @@ pipeline {
             steps {
                 echo "Starting the application..."
                 sh "whoami"
+                echo "down previous containers"
+                sh "docker compose down"
+                echo "up new containers"
                 sh "docker compose up -d"
                 echo "Application started."
+            }
+        }
+        stage("Cleanup") {
+            steps {
+                echo "Cleaning up unused Docker resources..."
+                sh "docker system prune -af"
+                echo "Cleanup completed."
+            }
+        }
+        stage("Smoke test") {
+            steps {
+                echo "Running smoke tests..."
+                sh "curl -f http://localhost:5000 || exit 1"
+                echo "Smoke tests passed."
             }
         }
     }
