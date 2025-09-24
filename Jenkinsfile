@@ -12,7 +12,7 @@ pipeline {
         stage("Build") {
             steps {
                 echo "Starting the application..."
-                sh "whomi"
+                sh "whoami"
                 sh "docker compose up -d"
                 echo "Application started."
             }
