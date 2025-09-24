@@ -1,44 +1,32 @@
 pipeline {
-    agent any
+    agent { label 'prod-agent' }
 
     environment {
-        APP_NAME     = 'sample-app'
-        DOCKERHUB    = 'krishnamonani'
-        STAGING_HOST = '54.81.114.228'
-        PROD_HOST    = '98.81.80.137'
-        SSH_USER     = 'ubuntu'
-        SSH_KEY      = credentials('ubuntu-key')
-        BRANCH_TAG   = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-        IMAGE_NAME   = "${DOCKERHUB}/${APP_NAME}:${BRANCH_TAG}"
+        APP_NAME   = 'sample-app'
+        DOCKERHUB  = 'krishnamonani'
+        PROD_HOST  = '98.81.80.137'
+        SSH_KEY    = credentials('ubuntu-key')
+        BRANCH_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+        IMAGE_NAME = "${DOCKERHUB}/${APP_NAME}:${BRANCH_TAG}"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
                 withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_PAT')]) {
-                    git branch: "${env.BRANCH_NAME}",
-                url: "https://${GITHUB_PAT}@github.com/krishnamonani/t15-app.git"
+                    git branch: "prod",
+                        url: "https://${GITHUB_PAT}@github.com/krishnamonani/t15-app.git"
                 }
             }
         }
 
-        stage('Run Unit Tests (Dev only)') {
-            when { branch 'dev' }
-            steps {
-                echo 'Running tests inside Docker container...'
-                sh 'docker compose -f docker-compose.test.yml up --build --abort-on-container-exit'
-            }
-        }
-
         stage('Build Docker Image') {
-            when { branch pattern: 'stage|prod', comparator: 'REGEXP' }
             steps {
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Push Docker Image') {
-            when { branch pattern: 'stage|prod', comparator: 'REGEXP' }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
@@ -47,48 +35,25 @@ pipeline {
             }
         }
 
-        stage('Deploy to Staging') {
-            when { branch 'stage' }
+        stage('Deploy to Production') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh """
-                    ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$STAGING_HOST '
-                        docker pull $IMAGE_NAME &&
-                        docker stop $APP_NAME || true &&
-                        docker rm $APP_NAME || true &&
-                        docker run -d --name $APP_NAME -p 5000:5000 $IMAGE_NAME
-                    '
-                    """
-                }
+                sh """
+                ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$PROD_HOST '
+                    docker pull $IMAGE_NAME &&
+                    docker stop $APP_NAME || true &&
+                    docker rm $APP_NAME || true &&
+                    docker run -d --name $APP_NAME -p 5000:5000 $IMAGE_NAME
+                '
+                """
             }
         }
 
-        stage('Deploy to Prod') {
-            when { branch 'prod' }
+        stage('Smoke Tests') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-key', keyFileVariable: 'SSH_KEY')]) {
-                    sh """
-                    ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$PROD_HOST '
-                        docker pull $IMAGE_NAME &&
-                        docker stop $APP_NAME || true &&
-                        docker rm $APP_NAME || true &&
-                        docker run -d --name $APP_NAME -p 5000:5000 $IMAGE_NAME
-                    '
-                    """
-                }
-            }
-        }
-
-        stage('Post-Deploy Smoke Tests') {
-            when { branch pattern: 'stage|prod', comparator: 'REGEXP' }
-            steps {
-                script {
-                    def targetHost = (env.BRANCH_NAME == 'stage') ? env.STAGING_HOST : env.PROD_HOST
-                    sh """
-                    echo "Running smoke tests on http://$targetHost"
-                    curl -f http://$targetHost:5000 || (echo "Smoke tests FAILED!" && exit 1)
-                    """
-                }
+                sh """
+                echo "Running smoke tests on http://$PROD_HOST"
+                curl -f http://$PROD_HOST:5000 || (echo "Smoke tests FAILED!" && exit 1)
+                """
             }
         }
     }
