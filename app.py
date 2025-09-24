@@ -240,7 +240,7 @@ def hello():
                 </div>
                 
                 <div class="page-title">
-                    <h1>🚀 DevOps Dashboard</h1>
+                    <h1>🚀 Staging DevOps Dashboard</h1>
                 </div>
                 
                 <div class="status live">
