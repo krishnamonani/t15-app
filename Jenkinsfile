@@ -5,6 +5,7 @@ pipeline {
         APP_NAME   = 'sample-app'
         DOCKERHUB  = 'krishnamonani'
         PROD_HOST  = '98.81.80.137'
+        SSH_USER   = 'ubuntu'
         SSH_KEY    = credentials('ubuntu-key')
         BRANCH_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
         IMAGE_NAME = "${DOCKERHUB}/${APP_NAME}:${BRANCH_TAG}"
