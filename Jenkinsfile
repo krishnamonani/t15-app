@@ -5,7 +5,7 @@ pipeline {
         APP_NAME     = 'sample-app'
         DOCKERHUB    = 'krishnamonani'
         STAGING_HOST = '54.81.114.228'
-        PROD_HOST    = '34.204.37.149'
+        PROD_HOST    = '98.81.80.137'
         SSH_USER     = 'ubuntu'
         SSH_KEY      = credentials('ubuntu-key')
         BRANCH_TAG   = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
