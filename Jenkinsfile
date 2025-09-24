@@ -2,20 +2,20 @@ pipeline {
     agent { label 'prod-agent' }
 
     environment {
-        APP_NAME   = 'sample-app'
-        DOCKERHUB  = 'krishnamonani'
-        PROD_HOST  = '98.81.80.137'
-        SSH_USER   = 'ubuntu'
-        SSH_KEY    = credentials('ubuntu-key')
-        BRANCH_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-        IMAGE_NAME = "${DOCKERHUB}/${APP_NAME}:${BRANCH_TAG}"
+        APP_NAME     = 'sample-app'
+        DOCKERHUB    = 'krishnamonani'
+        PROD_HOST    = '98.81.80.137'
+        SSH_USER     = 'ubuntu'
+        SSH_KEY      = credentials('ubuntu-key')
+        BRANCH_TAG   = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+        IMAGE_NAME   = "${DOCKERHUB}/${APP_NAME}:${BRANCH_TAG}"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
                 withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_PAT')]) {
-                    git branch: "prod",
+                    git branch: 'prod',
                         url: "https://${GITHUB_PAT}@github.com/krishnamonani/t15-app.git"
                 }
             }
@@ -36,7 +36,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Production') {
+        stage('Deploy to Staging') {
             steps {
                 sh """
                 ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$PROD_HOST '
