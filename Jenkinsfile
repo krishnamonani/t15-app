@@ -15,7 +15,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_PAT')]) {
-                    git branch: 'prod',
+                    git branch: 'main',
                         url: "https://${GITHUB_PAT}@github.com/krishnamonani/t15-app.git"
                 }
             }
