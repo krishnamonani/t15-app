@@ -225,7 +225,7 @@ def hello():
     return f"""
     <html>
         <head>
-            <title>STAGING - DevOps Dashboard</title>
+            <title>PROD - DevOps Dashboard</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>{GLOBAL_CSS}</style>
         </head>
@@ -240,7 +240,7 @@ def hello():
                 </div>
                 
                 <div class="page-title">
-                    <h1>🚀 Staging DevOps Dashboard</h1>
+                    <h1>🚀 Production DevOps Dashboard</h1>
                 </div>
                 
                 <div class="status live">
