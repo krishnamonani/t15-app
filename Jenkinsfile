@@ -27,7 +27,7 @@ pipeline {
         stage('Run Unit Test') {
             steps {
                 echo 'Running unit tests inside a Docker container...'
-                sh 'docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from app'
+                sh 'docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from app'
                 echo 'Unit tests completed.'
             }
             post {
