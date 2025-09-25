@@ -6,36 +6,43 @@ pipeline {
     }
 
     stages {
+        stage('Down Previous Build') {
+            steps {
+                echo 'Stopping previous build'
+                sh 'docker compose down || true'
+                echo 'Previous build stopped.'
+            }
+        }
         stage('Checkout Code') {
             steps {
-                echo "Checking out code from GitHub repository..."
-                git url: "https://github.com/krishnamonani/t15-app.git", branch: "main", credentialsId: 'github-pat'
-                echo "Code checkout completed."
+                echo 'Checking out code from GitHub repository...'
+                git url: 'https://github.com/krishnamonani/t15-app.git', branch: 'main', credentialsId: 'github-pat'
+                echo 'Code checkout completed.'
             }
         }
-        stage("Build") {
+        stage('Build') {
             steps {
-                echo "Starting the application..."
-                sh "whoami"
-                echo "down previous containers"
-                sh "docker compose down"
-                echo "up new containers"
-                sh "docker compose up -d"
-                echo "Application started."
+                echo 'Building the application'
+                sh 'whoami'
+                echo 'Build new image'
+                sh 'docker compose build --no-cache'
+                echo 'up new containers'
+                sh 'docker compose up -d'
+                echo 'Application started.'
             }
         }
-        stage("Cleanup") {
+        stage('Cleanup') {
             steps {
-                echo "Cleaning up unused Docker resources..."
-                sh "docker system prune -af"
-                echo "Cleanup completed."
+                echo 'Cleaning up unused Docker resources...'
+                sh 'docker system prune -af'
+                echo 'Cleanup completed.'
             }
         }
-        stage("Smoke test") {
+        stage('Smoke test') {
             steps {
-                echo "Running smoke tests..."
-                sh "curl -f http://localhost:5000 || exit 1"
-                echo "Smoke tests passed."
+                echo 'Running smoke tests...'
+                sh 'curl -f http://localhost:5000 || exit 1'
+                echo 'Smoke tests passed.'
             }
         }
     }
