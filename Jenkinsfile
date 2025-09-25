@@ -32,10 +32,8 @@ pipeline {
             }
             post {
                 always {
-                    echo 'Tearing down the test environament...'
-                    sh 'docker-compose -f docker-compose.test.yml down || true'
-                    echo 'Test environment torn down.'
                     sh 'docker system prune -af || true'
+                    echo ('Cleaned up Docker resources.')
                 }
             }
         }
