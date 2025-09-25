@@ -2,59 +2,51 @@ pipeline {
     agent { label 'stage-agent' }
 
     environment {
-        APP_NAME     = 'sample-app'
-        DOCKERHUB    = 'krishnamonani'
-        STAGING_HOST = '54.81.114.228'
-        SSH_USER     = 'ubuntu'
-        SSH_KEY      = credentials('ubuntu-key')
-        BRANCH_TAG   = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-        IMAGE_NAME   = "${DOCKERHUB}/${APP_NAME}:${BRANCH_TAG}"
+        GITHUB_CREDENTIALS = credentials('github-pat')
     }
 
     stages {
+        stage('Down Previous Build') {
+            when {
+                branch 'stage'
+            }
+            steps {
+                echo "!!!THIS IS STAGING BRANCH!!!"
+                echo 'Stopping previous build'
+                sh 'docker compose down || true'
+                echo 'Previous build stopped.'
+            }
+        }
         stage('Checkout Code') {
             steps {
-                withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_PAT')]) {
-                    git branch: 'stage',
-                        url: "https://${GITHUB_PAT}@github.com/krishnamonani/t15-app.git"
-                }
+                echo 'Checking out code from GitHub repository...'
+                git url: 'https://github.com/krishnamonani/t15-app.git', branch: 'stage', credentialsId: 'github-pat'
+                echo 'Code checkout completed.'
             }
         }
-
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                echo 'Building the application'
+                sh 'whoami'
+                echo 'Build new image'
+                sh 'docker compose build --no-cache'
+                echo 'up new containers'
+                sh 'docker compose up -d'
+                echo 'Application started.'
             }
         }
-
-        stage('Push Docker Image') {
+        stage('Cleanup') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push $IMAGE_NAME'
-                }
+                echo 'Cleaning up unused Docker resources...'
+                sh 'docker system prune -af'
+                echo 'Cleanup completed.'
             }
         }
-
-        stage('Deploy to Staging') {
+        stage('Smoke test') {
             steps {
-                sh """
-                ssh -i $SSH_KEY -o StrictHostKeyChecking=no ubuntu@$STAGING_HOST '
-                    docker pull $IMAGE_NAME &&
-                    docker stop $APP_NAME || true &&
-                    docker rm $APP_NAME || true &&
-                    docker run -d --name $APP_NAME -p 5000:5000 $IMAGE_NAME
-                '
-                """
-            }
-        }
-
-        stage('Smoke Tests') {
-            steps {
-                sh """
-                echo "Running smoke tests on http://$STAGING_HOST"
-                curl -f http://$STAGING_HOST:5000 || (echo "Smoke tests FAILED!" && exit 1)
-                """
+                echo 'Running smoke tests...'
+                sh 'curl -f http://localhost:5000 || exit 1'
+                echo 'Smoke tests passed.'
             }
         }
     }
