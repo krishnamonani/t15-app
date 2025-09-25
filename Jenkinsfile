@@ -7,6 +7,9 @@ pipeline {
 
     stages {
         stage('Down Previous Build') {
+            when {
+                branch 'main'
+            }
             steps {
                 echo 'Stopping previous build'
                 sh 'docker compose down || true'
